@@ -104,19 +104,22 @@ func (c *Chunker) ProcessVADResult(streamID uint32, direction uint8, callerID st
 	c.confidenceSum += vadResult.Confidence
 	c.confidenceCount++
 	
-	// Calculate byte positions for this window (window samples * 2 bytes per sample)
-	windowStartByte := int(window.StartSeq-buffer.GetLastSequence()) * 160 * 2 // Approximate
-	windowEndByte := int(window.EndSeq-buffer.GetLastSequence()) * 160 * 2
-	
-	// Update segment end position
-	c.segmentEndByte = windowEndByte
+	// Update segment end position (use current buffer size)
+	currentBufferSize := len(buffer.GetRawAudioData())
+	if c.segmentStartByte == 0 { // First window in chunk
+		c.segmentStartByte = currentBufferSize - 512*2 // 512 samples * 2 bytes per sample
+		if c.segmentStartByte < 0 {
+			c.segmentStartByte = 0
+		}
+	}
+	c.segmentEndByte = currentBufferSize
 	c.endSeq = window.EndSeq
 	
 	switch c.state {
 	case StateIdle:
 		if vadResult.HasVoice {
 			// Start collecting a new chunk
-			c.startNewChunk(streamID, direction, callerID, window, now, windowStartByte)
+			c.startNewChunk(streamID, direction, callerID, window, now, currentBufferSize)
 			c.state = StateCollecting
 		}
 		
@@ -193,7 +196,7 @@ func (c *Chunker) ProcessVADResult(streamID uint32, direction uint8, callerID st
 
 // startNewChunk initializes a new chunk collection
 func (c *Chunker) startNewChunk(streamID uint32, direction uint8, callerID string, 
-	window *AudioWindow, now time.Time, windowStartByte int) {
+	window *AudioWindow, now time.Time, currentBufferSize int) {
 	
 	c.currentChunk = &AudioChunk{
 		StreamID:   streamID,
@@ -211,7 +214,10 @@ func (c *Chunker) startNewChunk(streamID uint32, direction uint8, callerID strin
 	c.chunkStartTime = now
 	c.silenceStartTime = time.Time{}
 	c.startSeq = window.StartSeq
-	c.segmentStartByte = windowStartByte
+	c.segmentStartByte = currentBufferSize - 512*2 // Start from this window
+	if c.segmentStartByte < 0 {
+		c.segmentStartByte = 0
+	}
 }
 
 // finalizeChunk creates a complete audio chunk
@@ -232,7 +238,17 @@ func (c *Chunker) finalizeChunk(endTime time.Time, buffer *Buffer) *AudioChunk {
 	
 	// Extract raw audio segment from buffer
 	var err error
-	if c.segmentStartByte >= 0 && c.segmentEndByte > c.segmentStartByte {
+	bufferSize := len(buffer.GetRawAudioData())
+	
+	// Ensure segment bounds are valid
+	if c.segmentStartByte < 0 {
+		c.segmentStartByte = 0
+	}
+	if c.segmentEndByte > bufferSize {
+		c.segmentEndByte = bufferSize
+	}
+	
+	if c.segmentStartByte >= 0 && c.segmentEndByte > c.segmentStartByte && c.segmentEndByte <= bufferSize {
 		c.currentChunk.AudioData, err = buffer.GetRawAudioSegment(c.segmentStartByte, c.segmentEndByte)
 		if err != nil {
 			// Log error but continue
