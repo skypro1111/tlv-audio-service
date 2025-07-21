@@ -1,0 +1,42 @@
+# TLV Audio Processing Service - Debug Configuration
+# Lower thresholds for testing chunking and transcription
+
+server:
+  udp_port: 4444
+  bind_address: "0.0.0.0"
+  buffer_size: 65536
+  max_concurrent_streams: 1000
+
+http:
+  port: 8080
+  address: "0.0.0.0"
+  enabled: true
+
+audio:
+  sample_rate: 8000
+  channels: 1
+  bit_depth: 16
+  chunk_min_duration: 0.5    # ЗНИЖЕНО: мінімум 0.5 секунди (було 1.0)
+  chunk_max_duration: 10.0   # ЗНИЖЕНО: максимум 10 секунд (було 30.0)
+  stream_timeout: 60         # seconds
+
+vad:
+  model_path: "./models/silero_vad.onnx"
+  threshold: 0.3             # ЗНИЖЕНО: поріг 0.3 (було 0.5) - більш чутливо
+  window_size: 512           # samples
+  overlap_ratio: 0.5
+  min_speech_duration: 0.2   # ЗНИЖЕНО: мінімум 0.2 сек мовлення (було 0.5)
+  min_silence_duration: 0.2  # ЗНИЖЕНО: мінімум 0.2 сек тиші (було 0.3)
+
+transcription:
+  endpoint: "http://10.24.2.184:5678/webhook/0d4d9f42-11b5-4b16-9dd8-28c2d8195d85"
+  api_key: "test-api-key"
+  timeout: 30                # seconds
+  max_retries: 3
+  max_concurrent: 10
+  output_format: "json"
+
+logging:
+  level: "debug"             # Детальні логи
+  format: "json"
+  output: "stdout"

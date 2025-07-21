@@ -1,0 +1,61 @@
+# Build artifacts
+*.so
+*.o
+*.a
+*.dylib
+
+# Test executables
+test_args
+test_framehook
+test_hangup
+stress_test
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*.swo
+*~
+
+# IDE and editor files
+.vscode/
+.vscode/**/*
+.idea/
+*.sublime-*
+.DS_Store
+
+# Development logs
+*.log
+debug.txt
+valgrind.out
+
+# Coverage reports
+*.gcov
+*.gcda
+*.gcno
+coverage.info
+coverage/
+
+# Core dumps
+core
+core.*
+
+# Python cache (if any)
+__pycache__/
+*.pyc
+*.pyo
+
+# Backup files
+*.orig
+
+# Operating system files
+Thumbs.db
+.Trash-*
+
+# Local configuration
+config.local
+local_test.conf 
+
+.cursorrules
+specification.md
+DEVELOPMENT_PLAN.md

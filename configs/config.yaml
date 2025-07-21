@@ -1,0 +1,42 @@
+# TLV Audio Processing Service Configuration
+# This configuration matches the specification in section 5.1
+
+server:
+  udp_port: 4444
+  bind_address: "0.0.0.0"
+  buffer_size: 65536
+  max_concurrent_streams: 1000
+
+http:
+  port: 8080
+  address: "0.0.0.0"
+  enabled: true
+
+audio:
+  sample_rate: 8000
+  channels: 1
+  bit_depth: 16
+  chunk_min_duration: 1.0    # seconds
+  chunk_max_duration: 30.0   # seconds  
+  stream_timeout: 60         # seconds
+
+vad:
+  model_path: "./models/silero_vad.onnx"
+  threshold: 0.5
+  window_size: 512           # samples
+  overlap_ratio: 0.5
+  min_speech_duration: 0.5   # seconds
+  min_silence_duration: 0.3  # seconds
+
+transcription:
+  endpoint: "http://10.24.2.184:5678/webhook/0d4d9f42-11b5-4b16-9dd8-28c2d8195d85"
+  api_key: "your-api-key"
+  timeout: 30                # seconds
+  max_retries: 3
+  max_concurrent: 10
+  output_format: "json"
+
+logging:
+  level: "info"
+  format: "json"
+  output: "stdout" 
